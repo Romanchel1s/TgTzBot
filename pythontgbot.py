@@ -1,19 +1,26 @@
 ﻿from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
-from config import bot_token, weather_token, news_token
+from dotenv import load_dotenv
+import os
 import requests
 import datetime
 import random
 
-TOKEN = bot_token
+load_dotenv()
+TOKEN = os.getenv('TOKEN')
 
 
 # получаем экземпляр `Updater`
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 
+# аргументы update и context передаются автоматически
+# update - это объект связанный с экземпляром Update который присылает и отправляет все сообщения. 
+# Через него можно получить доступ к экземпляру telegram.Bot() как update.bot;
+# context - это объект связанный с контекстом обработанного сообщения. 
+# Через него также можно получить доступ к экземпляру telegram.Bot() как context.bot.
 
-def send_keyboard(update, context):
+def send_keyboard(update, context) -> None:
     # Создаем кнопки
     button1 = InlineKeyboardButton("Help me", callback_data="help")
     button2 = InlineKeyboardButton("Echo!", callback_data="echo")
@@ -30,7 +37,7 @@ def send_keyboard(update, context):
     update.message.reply_text("Привет, я телеграм бот Ивасик, можешь потыкать кнопки ниже:", reply_markup=reply_markup)
 
 
-def button_callback(update, context):
+def button_callback(update, context) -> None:
     query = update.callback_query
     if query.data == "help":
         # Если нажата кнопка "Help me", отправляем команду /help в чат
@@ -54,12 +61,12 @@ def button_callback(update, context):
         joke(update, context)
 
 
-def echo(update, context):
+def echo(update, context) -> None:
     # Отвечает на сообщение, повторяя его
     context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text.replace('/echo',''))
 
 
-def help_command(update, context):
+def help_command(update, context) -> None:
     context.bot.send_message(chat_id=update.effective_chat.id, text='Доступные команды:\n'
     '/start - приветствие пользователя и вывод меню\n'
     '/help - помощь, краткое описание команд\n'
@@ -71,11 +78,12 @@ def help_command(update, context):
     '/random - рандомное число из заданного диапазона')
 
 
-def weather(update, context):
+def weather(update, context) -> None:
     #Прогноз погоды в city
     city = update.message.text.replace('/weather ','')
+    print(type(update), type(context))
     try:
-        r = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={weather_token}&units=metric")
+        r = requests.get(f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={os.getenv('WTOKEN')}&units=metric")
         data = r.json()
         out_city = data['name']
         cur_weather = data['main']['temp']
@@ -95,7 +103,7 @@ def weather(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text='Ошибка, попробуйте ещё раз')
 
 
-def random_number(update, context):
+def random_number(update, context) -> None:
     if len(context.args) < 2:
         update.message.reply_text('Используйте команду /random <минимум> <максимум>')
         return
@@ -118,10 +126,10 @@ random_number_handler = CommandHandler('random', random_number)
 dispatcher.add_handler(random_number_handler)
 
 
-def news(update, context):
+def news(update, context) -> None:
     try:
         news_query = update.message.text.replace('/news ','')
-        r = requests.get(f"https://newsapi.org/v2/everything?q={news_query}&apiKey={news_token}")
+        r = requests.get(f"https://newsapi.org/v2/everything?q={news_query}&apiKey={os.getenv('NTOKEN')}")
         data = r.json()
         source_name = data['articles'][0]['source']['name']
         title = data['articles'][0]['title']
@@ -135,7 +143,7 @@ def news(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text='Ошибка, попробуйте ещё раз')
 
 
-def joke(update, context):
+def joke(update, context) -> None:
     r = requests.get(f"https://official-joke-api.appspot.com/random_joke")
     data = r.json()
     setup = data['setup']
@@ -145,12 +153,12 @@ def joke(update, context):
     f'{punchline}')
 
 
-def unknown(update, context):
+def unknown(update, context) -> None:
     context.bot.send_message(chat_id=update.effective_chat.id, 
                              text="Извините, я не понимаю такую команду, перейдите в /help")
 
 
-def stop(update, context):
+def stop(update, context) -> None:
     context.bot.send_message(chat_id=update.effective_chat.id, 
                              text="До скорой встречи!")
     updater.stop()
