@@ -1,26 +1,22 @@
-﻿from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
-from dotenv import load_dotenv
+import telegram
 import os
 import requests
 import datetime
 import random
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
+from dotenv import load_dotenv
+
 
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
-
 
 # получаем экземпляр `Updater`
 updater = Updater(token=TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 
-# аргументы update и context передаются автоматически
-# update - это объект связанный с экземпляром Update который присылает и отправляет все сообщения. 
-# Через него можно получить доступ к экземпляру telegram.Bot() как update.bot;
-# context - это объект связанный с контекстом обработанного сообщения. 
-# Через него также можно получить доступ к экземпляру telegram.Bot() как context.bot.
 
-def send_keyboard(update, context) -> None:
+def send_keyboard(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     # Создаем кнопки
     button1 = InlineKeyboardButton("Help me", callback_data="help")
     button2 = InlineKeyboardButton("Echo!", callback_data="echo")
@@ -37,7 +33,7 @@ def send_keyboard(update, context) -> None:
     update.message.reply_text("Привет, я телеграм бот Ивасик, можешь потыкать кнопки ниже:", reply_markup=reply_markup)
 
 
-def button_callback(update, context) -> None:
+def button_callback(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     query = update.callback_query
     if query.data == "help":
         # Если нажата кнопка "Help me", отправляем команду /help в чат
@@ -61,12 +57,12 @@ def button_callback(update, context) -> None:
         joke(update, context)
 
 
-def echo(update, context) -> None:
+def echo(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     # Отвечает на сообщение, повторяя его
     context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text.replace('/echo',''))
 
 
-def help_command(update, context) -> None:
+def help_command(update: telegram.update.Update, context) -> None:
     context.bot.send_message(chat_id=update.effective_chat.id, text='Доступные команды:\n'
     '/start - приветствие пользователя и вывод меню\n'
     '/help - помощь, краткое описание команд\n'
@@ -78,7 +74,7 @@ def help_command(update, context) -> None:
     '/random - рандомное число из заданного диапазона')
 
 
-def weather(update, context) -> None:
+def weather(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     #Прогноз погоды в city
     city = update.message.text.replace('/weather ','')
     print(type(update), type(context))
@@ -103,7 +99,7 @@ def weather(update, context) -> None:
         context.bot.send_message(chat_id=update.effective_chat.id, text='Ошибка, попробуйте ещё раз')
 
 
-def random_number(update, context) -> None:
+def random_number(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     if len(context.args) < 2:
         update.message.reply_text('Используйте команду /random <минимум> <максимум>')
         return
@@ -122,11 +118,8 @@ def random_number(update, context) -> None:
     except ValueError:
         update.message.reply_text('Некорректные аргументы. Введите целочисленные значения для минимума и максимума.')
 
-random_number_handler = CommandHandler('random', random_number)
-dispatcher.add_handler(random_number_handler)
 
-
-def news(update, context) -> None:
+def news(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     try:
         news_query = update.message.text.replace('/news ','')
         r = requests.get(f"https://newsapi.org/v2/everything?q={news_query}&apiKey={os.getenv('NTOKEN')}")
@@ -143,7 +136,7 @@ def news(update, context) -> None:
         context.bot.send_message(chat_id=update.effective_chat.id, text='Ошибка, попробуйте ещё раз')
 
 
-def joke(update, context) -> None:
+def joke(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     r = requests.get(f"https://official-joke-api.appspot.com/random_joke")
     data = r.json()
     setup = data['setup']
@@ -153,17 +146,16 @@ def joke(update, context) -> None:
     f'{punchline}')
 
 
-def unknown(update, context) -> None:
+def unknown(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     context.bot.send_message(chat_id=update.effective_chat.id, 
                              text="Извините, я не понимаю такую команду, перейдите в /help")
 
 
-def stop(update, context) -> None:
+def stop(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -> None:
     context.bot.send_message(chat_id=update.effective_chat.id, 
                              text="До скорой встречи!")
     updater.stop()
 
-# Добавляем команды
 
 dispatcher.add_handler(CommandHandler('random', random_number))
 dispatcher.add_handler(CommandHandler("start", send_keyboard))
