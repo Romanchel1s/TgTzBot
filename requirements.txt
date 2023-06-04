@@ -1,0 +1,4 @@
+certifi==2023.5.7
+python-telegram-bot==13.7
+requests==2.28.2
+python-dotenv==1.0.0
